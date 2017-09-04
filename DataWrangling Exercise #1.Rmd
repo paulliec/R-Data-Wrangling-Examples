@@ -1,0 +1,80 @@
+---
+output:
+  html_document: default
+---
+
+# Data wrangling exercise 
+# Exercise number one
+
+# set up the environment
+```{r}
+library(tidyr)
+library(dplyr)
+library(readxl)
+```
+## 1.  Read the document from downloads to R
+```{r}
+library(readxl)
+refine<-read_excel("/Users/paulcarson/Downloads/refine.xlsx")
+
+```
+
+## 2. clean up company names
+###change all of the column to lower case
+```{r}
+refine$company<-tolower(refine$company)
+```
+
+### check for a pattern to correct spelling mistakes.  following looks for the start of each company name.  Phillips starts with an f for one entry, so final line looks for the ps at the end to substitue
+```{r}
+refine$company<- sub(pattern = "^p.*", replacement = "phillips", x= refine$company)
+refine$company<- sub(pattern = "^a.*", replacement = "akzo", x= refine$company)
+refine$company<- sub(pattern = "^v.*", replacement = "von houten", x= refine$company)
+refine$company<- sub(pattern = "^u.*", replacement = "unilever", x= refine$company)
+refine$company<- sub(pattern = ".*\\ps$", replacement = "phillips", x= refine$company)
+```
+
+
+## 3.  separate out product code and number into different columns
+```{r}
+refine <- separate (refine, "Product code / number", c("product_code", "product_number"), sep = "-")
+```
+
+
+## 4.  add product categories
+###establish a look up table based on the key from the table
+###establish a column, product_category with using the look up table with the coded column
+
+```{r}
+lut<-c("p"="Smartphone","v"="TV","x"="Laptop","q"="Tablet")
+refine$product_category <- lut[refine$product_code]
+```
+
+## 5.  put together columns for a full address for geo coding
+```{r}
+refine <- refine %>% mutate(full_address = paste(address,city,country, sep =","))
+```
+
+## 6. create dummy variables for company and product category
+### four binary columns for company: company_phillips, company_akzo,company_van_houten,company_unilver
+```{r}
+refine<-mutate(refine,company_phillips=ifelse(company=="phillips",1,0))
+refine<-mutate(refine,company_akzo=ifelse(company=="akzo",1,0))
+refine<-mutate(refine,company_van_houten=ifelse(company=="von houten",1,0))
+refine<-mutate(refine,company_unilver=ifelse(company=="unilever",1,0))
+```
+
+
+###four binary columns for product category: product_smartphone, product_tv,product_laptop,product_tablet
+##save final as a csv file: refine_clean up
+```{r}
+refine<- mutate(refine,product_smartphone=ifelse(product_category=="smartphone",1,0))
+refine<- mutate(refine,product_tv=ifelse(product_category=="tv",1,0))
+refine<- mutate(refine,product_laptop=ifelse(product_category=="laptop",1,0))
+refine<- mutate(refine,product_tablet=ifelse(product_category=="tablet",1,0))
+write.csv(refine,"refine_clean.csv")
+```
+
+
+
+
